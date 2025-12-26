@@ -13,7 +13,7 @@ def cleanup_file(path: str):
 
 @app.get("/")
 def home():
-    return {"message": "YouTube MP3 API (Android Mode) Calisiyor."}
+    return {"message": "YouTube MP3 API (iOS Mode) Calisiyor."}
 
 def get_ydl_opts(filename=None):
     return {
@@ -22,10 +22,12 @@ def get_ydl_opts(filename=None):
         'quiet': True,
         'nocheckcertificate': True,
         'cookiefile': 'cookies.txt',
-        # --- KRİTİK DEĞİŞİKLİK: ANDROID MASKESİ ---
+        # --- KRİTİK DEĞİŞİKLİK: iOS MASKESİ ---
+        # YouTube şu an Android ve Web istemcilerini veri merkezlerinden engelliyor.
+        # iOS (iPhone) istemcisi hala çalışıyor.
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web'], # Önce Android taklidi yap, yemezse Web dene
+                'player_client': ['ios'], 
             }
         },
         # ------------------------------------------
@@ -38,7 +40,7 @@ def get_ydl_opts(filename=None):
 
 @app.get("/get-playlist-info")
 def get_playlist_info(url: str):
-    # Playlist için de Android taklidi yapalım
+    # Playlist için de iOS taklidi
     opts = get_ydl_opts()
     opts['extract_flat'] = True
     
@@ -84,7 +86,7 @@ def download_mp3(url: str, background_tasks: BackgroundTasks):
         final_filename = f"{file_path}.mp3"
         
         if not os.path.exists(final_filename):
-            return {"error": "Dosya indirilemedi. (Android modu da engellendi)"}
+            return {"error": "Dosya indirilemedi. (iOS modu da engellendi)"}
 
         background_tasks.add_task(cleanup_file, final_filename)
         
