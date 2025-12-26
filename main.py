@@ -13,24 +13,23 @@ def cleanup_file(path: str):
 
 @app.get("/")
 def home():
-    return {"message": "YouTube MP3 API (iOS Mode) Calisiyor."}
+    return {"message": "YouTube MP3 API (Clean iOS Mode) Calisiyor."}
 
 def get_ydl_opts(filename=None):
     return {
-        'format': 'bestaudio/best',
+        'format': 'bestaudio/best', # En iyi sesi bul
         'outtmpl': filename,
         'quiet': True,
         'nocheckcertificate': True,
-        'cookiefile': 'cookies.txt',
-        # --- KRİTİK DEĞİŞİKLİK: iOS MASKESİ ---
-        # YouTube şu an Android ve Web istemcilerini veri merkezlerinden engelliyor.
-        # iOS (iPhone) istemcisi hala çalışıyor.
+        # 'cookiefile': 'cookies.txt',  <-- BU SATIRI SİLDİK (Çatışmayı önlemek için)
+        
+        # --- iOS MASKESİ (IP Engelini Aşar) ---
         'extractor_args': {
             'youtube': {
                 'player_client': ['ios'], 
             }
         },
-        # ------------------------------------------
+        # --------------------------------------
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -40,14 +39,10 @@ def get_ydl_opts(filename=None):
 
 @app.get("/get-playlist-info")
 def get_playlist_info(url: str):
-    # Playlist için de iOS taklidi
     opts = get_ydl_opts()
     opts['extract_flat'] = True
     
     try:
-        if not os.path.exists('cookies.txt'):
-             return {"error": "cookies.txt yok! GitHub'a yukle."}
-
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
@@ -86,7 +81,7 @@ def download_mp3(url: str, background_tasks: BackgroundTasks):
         final_filename = f"{file_path}.mp3"
         
         if not os.path.exists(final_filename):
-            return {"error": "Dosya indirilemedi. (iOS modu da engellendi)"}
+            return {"error": "Dosya indirilemedi (Format veya Erişim Hatasi)."}
 
         background_tasks.add_task(cleanup_file, final_filename)
         
