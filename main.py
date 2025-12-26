@@ -3,7 +3,6 @@ import yt_dlp
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import FileResponse
 import uuid
-import time # Bekleme süresi için
 
 app = FastAPI()
 TEMP_DIR = "/tmp"
@@ -14,9 +13,8 @@ def cleanup_file(path: str):
 
 @app.get("/")
 def home():
-    return {"message": "YouTube MP3 API (Maskeli Surum) Calisiyor."}
+    return {"message": "YouTube MP3 API (Android Mode) Calisiyor."}
 
-# Ortak Ayarlar (Hem playlist hem mp3 için)
 def get_ydl_opts(filename=None):
     return {
         'format': 'bestaudio/best',
@@ -24,11 +22,13 @@ def get_ydl_opts(filename=None):
         'quiet': True,
         'nocheckcertificate': True,
         'cookiefile': 'cookies.txt',
-        # --- YENİ EKLENEN KISIM: TARAYICI TAKLİDİ ---
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-        'referer': 'https://www.youtube.com/',
-        'sleep_interval': 2, # Her işlem arası 2 saniye bekle (Bot sanmasınlar)
-        # ---------------------------------------------
+        # --- KRİTİK DEĞİŞİKLİK: ANDROID MASKESİ ---
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web'], # Önce Android taklidi yap, yemezse Web dene
+            }
+        },
+        # ------------------------------------------
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -38,8 +38,9 @@ def get_ydl_opts(filename=None):
 
 @app.get("/get-playlist-info")
 def get_playlist_info(url: str):
+    # Playlist için de Android taklidi yapalım
     opts = get_ydl_opts()
-    opts['extract_flat'] = True # Sadece bilgi çek
+    opts['extract_flat'] = True
     
     try:
         if not os.path.exists('cookies.txt'):
@@ -83,7 +84,7 @@ def download_mp3(url: str, background_tasks: BackgroundTasks):
         final_filename = f"{file_path}.mp3"
         
         if not os.path.exists(final_filename):
-            return {"error": "Dosya indirilemedi. Cookie IP engeline takildi."}
+            return {"error": "Dosya indirilemedi. (Android modu da engellendi)"}
 
         background_tasks.add_task(cleanup_file, final_filename)
         
